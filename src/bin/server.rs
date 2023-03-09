@@ -63,7 +63,6 @@ fn main() {
                     }
                     return;
                 }
-                println!("Message from {:?}: {:?}", e.addr(), d);
 
                 if auth_endpoint.is_none() || e != auth_endpoint.unwrap() {
                     println!("UNAUTHORIZED TCP CONNECTION, DROPPING!!!!");
