@@ -1,10 +1,5 @@
 <html>
-  <canvas
-    id="map"
-    width="800"
-    height="800"
-    style="border: 1px solid #FFFFFF"
-  >
+  <canvas id="map" width="800" height="800" style="border: 1px solid #ffffff">
     Unlucky, canvas is disabled. No radar for you :(
   </canvas>
   <script charset="utf-8">
@@ -16,13 +11,12 @@
     ws.onmessage = async (message) => {
       let text = await message.data.text();
       let data = JSON.parse(text);
-    
+
       let canvas = document.getElementById("map");
       let ctx = canvas.getContext("2d");
 
       // reset the canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
 
       for (let i = 0; i < data.length; i++) {
         let player = data[i];
@@ -43,10 +37,10 @@
         let [x, y, z] = player.position;
         // these positions are relative to the origin (the middle of the map)
         // so we need to add the width/height of the canvas to get the actual position
-        // we also need to scale down to 0.1, as the positions range [-4000, 4000],
+        // we also need to scale down, as the positions range [-3000, 3000],
         // and our canvas is 800x800
         function scale(x) {
-          return (x + 4000) / 8000;
+          return (x + 3000) / 6000;
         }
 
         // if health == 0, the player is dead
@@ -55,20 +49,31 @@
         }
 
         // draw rect, with health on the top
-        ctx.fillRect(scale(x) * canvas.width, scale(y) * canvas.height, 5, 5);
+        ctx.fillRect(scale(x) * canvas.width, scale(y) * canvas.height, 15, 15);
         ctx.fillStyle = "#000000";
         let text = `HP: ${player.health}`;
-        ctx.fillText(text, scale(x) * canvas.width, scale(y) * canvas.height -10);
+        ctx.fillText(
+          text,
+          scale(x) * canvas.width,
+          scale(y) * canvas.height - 30
+        );
         let angle = player.ang_rotation[1];
 
         // we have an angle the player is looking at, so we can draw a line.
         // the angle is in the range of [-180, 180], so we need to convert it to radians
-        angle = (angle + 180) * Math.PI / 180;
+        angle = ((angle + 180) * Math.PI) / 180;
         let x2 = Math.cos(angle) * 100;
         let y2 = Math.sin(angle) * 100;
         ctx.beginPath();
-        ctx.moveTo(scale(x) * canvas.width, scale(y) * canvas.height);
-        ctx.lineTo(scale(x - x2) * canvas.width, scale(y - y2) * canvas.height);
+        ctx.lineWidth = 4;
+        ctx.moveTo(
+          scale(x) * canvas.width + 7.5,
+          scale(y) * canvas.height + 7.5
+        );
+        ctx.lineTo(
+          scale(x - x2 * 1.5) * canvas.width + 7.5,
+          scale(y - y2 * 1.5) * canvas.height + 7.5
+        );
         ctx.stroke();
       }
     };
