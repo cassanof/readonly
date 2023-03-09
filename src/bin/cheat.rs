@@ -186,7 +186,7 @@ async fn main() {
         for i in 0..max_players {
             let entity_list: u64 = cheat.client_read(signatures::ENTITY_LIST + (i * 0x20) as usize);
             if entity_list == 0 {
-                break;
+                continue;
             }
 
             let entity: u32 = cheat.read(entity_list as usize);
@@ -202,12 +202,14 @@ async fn main() {
             }
             .to_string();
             let position: [f32; 3] = cheat.read(entity as usize + signatures::POSITION);
+            let ang_rotation: [f32; 2] = cheat.read(entity as usize + 0x164);
 
             let mut player = PlayerInfo {
                 team,
                 is_local: false,
                 health,
                 position,
+                ang_rotation,
             };
 
             // if the position is the same as the local player, it's probably the local player

@@ -1,12 +1,11 @@
 <html>
-  <h1>a</h1>
   <canvas
     id="map"
     width="800"
     height="800"
     style="border: 1px solid #FFFFFF"
   >
-    Your browser does not support the canvas element.
+    Unlucky, canvas is disabled. No radar for you :(
   </canvas>
   <script charset="utf-8">
     const ws = new WebSocket("ws://localhost:13371");
@@ -60,6 +59,17 @@
         ctx.fillStyle = "#000000";
         let text = `HP: ${player.health}`;
         ctx.fillText(text, scale(x) * canvas.width, scale(y) * canvas.height -10);
+        let angle = player.ang_rotation[1];
+
+        // we have an angle the player is looking at, so we can draw a line.
+        // the angle is in the range of [-180, 180], so we need to convert it to radians
+        angle = (angle + 180) * Math.PI / 180;
+        let x2 = Math.cos(angle) * 100;
+        let y2 = Math.sin(angle) * 100;
+        ctx.beginPath();
+        ctx.moveTo(scale(x) * canvas.width, scale(y) * canvas.height);
+        ctx.lineTo(scale(x - x2) * canvas.width, scale(y - y2) * canvas.height);
+        ctx.stroke();
       }
     };
   </script>

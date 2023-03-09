@@ -6,4 +6,5 @@ pub struct PlayerInfo {
     pub is_local: bool,
     pub health: u32,
     pub position: [f32; 3],
+    pub ang_rotation: [f32; 2],
 }
