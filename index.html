@@ -1,0 +1,66 @@
+<html>
+  <h1>a</h1>
+  <canvas
+    id="map"
+    width="800"
+    height="800"
+    style="border: 1px solid #FFFFFF"
+  >
+    Your browser does not support the canvas element.
+  </canvas>
+  <script charset="utf-8">
+    const ws = new WebSocket("ws://localhost:13371");
+    ws.onopen = () => {
+      console.log("ws connection established :P");
+    };
+
+    ws.onmessage = async (message) => {
+      let text = await message.data.text();
+      let data = JSON.parse(text);
+    
+      let canvas = document.getElementById("map");
+      let ctx = canvas.getContext("2d");
+
+      // reset the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+      for (let i = 0; i < data.length; i++) {
+        let player = data[i];
+        // console.log(player);
+
+        let color;
+        if (player.is_local) {
+          color = "#00FF0D";
+        } else if (player.team == "T") {
+          color = "#FF9D00";
+        } else if (player.team == "CT") {
+          color = "#3C00FF";
+        } else {
+          // idk
+          color = "#1E1E1E";
+        }
+        ctx.fillStyle = color;
+        let [x, y, z] = player.position;
+        // these positions are relative to the origin (the middle of the map)
+        // so we need to add the width/height of the canvas to get the actual position
+        // we also need to scale down to 0.1, as the positions range [-4000, 4000],
+        // and our canvas is 800x800
+        function scale(x) {
+          return (x + 4000) / 8000;
+        }
+
+        // if health == 0, the player is dead
+        if (player.health == 0) {
+          continue;
+        }
+
+        // draw rect, with health on the top
+        ctx.fillRect(scale(x) * canvas.width, scale(y) * canvas.height, 5, 5);
+        ctx.fillStyle = "#000000";
+        let text = `HP: ${player.health}`;
+        ctx.fillText(text, scale(x) * canvas.width, scale(y) * canvas.height -10);
+      }
+    };
+  </script>
+</html>
