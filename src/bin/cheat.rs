@@ -160,12 +160,10 @@ fn get_map(cwd: &str, name: &str) -> Option<(MapInfo, Vec<MapChunk>)> {
     // let's read the overview file
     let overview_path = format!("{cwd}/csgo/resource/overviews/{name}.txt");
     let overview = std::fs::read_to_string(overview_path).ok()?;
-    // we want to get "pos_x" and "pos_y" from the overview file
-    // format:
-    // 	"pos_x"		"-2476"	// upper left world coordinate
-    //  "pos_y"		"3239"
     let mut upper_left_x = None;
-    let mut bottom_right_y = None;
+    let mut upper_left_y = None;
+    let mut scale = None;
+    let mut already_rotated = true;
 
     for line in overview.lines() {
         let mut split = line.split_whitespace();
@@ -173,17 +171,27 @@ fn get_map(cwd: &str, name: &str) -> Option<(MapInfo, Vec<MapChunk>)> {
         let value = split.next().unwrap_or("");
         match key {
             "\"pos_x\"" => upper_left_x = value.trim_matches('\"').parse::<f32>().ok(),
-            "\"pos_y\"" => bottom_right_y = value.trim_matches('\"').parse::<f32>().ok(),
+            "\"pos_y\"" => upper_left_y = value.trim_matches('\"').parse::<f32>().ok(),
+            "\"rotate\"" => already_rotated = value.trim_matches('\"') == "1",
+            "\"scale\"" => scale = value.trim_matches('\"').parse::<f32>().ok(),
             _ => continue,
         }
     }
 
     let upper_left_x = upper_left_x?;
-    let bottom_right_y = bottom_right_y?;
+    let upper_left_y = upper_left_y?;
+    let scale = scale?;
 
     // now we need to read the dds file
     let dds_path = format!("{cwd}/csgo/resource/overviews/{name}_radar.dds");
     let img = image::open(dds_path).ok()?;
+    // rotate the image if needed
+    let img = if already_rotated {
+        img
+    } else {
+        img.rotate180()
+    };
+
     // convert to jpg
     let buf: Vec<u8> = Vec::new();
     let mut writer = std::io::Cursor::new(buf);
@@ -209,7 +217,8 @@ fn get_map(cwd: &str, name: &str) -> Option<(MapInfo, Vec<MapChunk>)> {
         name: name.to_string(),
         chunks: n,
         upper_left_x,
-        bottom_right_y,
+        upper_left_y,
+        scale,
     };
 
     Some((map, chunks))

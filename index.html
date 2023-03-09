@@ -35,15 +35,14 @@
         }
         mapChunks[data.i] = data.data;
         return;
-      } // else...
+      } else if (type == "players" && !mapInfo) {
+        return;
+      }
 
       let players = data;
 
-      // reset the canvas
-      //ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       // draw the map, if we have all the chunks
-      const drawMap = () => {
+      const drawMapIfNeeded = () => {
         if (mapImage) {
           ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
         } else if (mapInfo && mapChunks) {
@@ -61,17 +60,23 @@
           // we can't draw jpgs directly, so we need to convert it to a png
           let img = new Image();
           img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           };
           img.src = `data:image/png;base64,${mapBase64}`;
           mapImage = img;
         }
       };
-      drawMap();
+      drawMapIfNeeded();
 
       for (let i = 0; i < players.length; i++) {
         let player = players[i];
-        // console.log(player);
+
+        // if 0 hp, skip
+        if (player.health == 0) {
+          continue;
+        }
 
         let color;
         if (player.is_local) {
@@ -85,46 +90,39 @@
           color = "#1E1E1E";
         }
         ctx.fillStyle = color;
-        let [x, y, _z] = player.position;
+
         // these positions are relative to the origin (the middle of the map).
-        // the map's top left's x is at mapInfo.upper_left_x,
-        // and the map's bottom right's x is at mapInfo.bottom_right_x.
-        // we need to scale the positions to the canvas size
-        function scale(x) {
-          return (x + 3000) / 6000;
+        let [x, y, _z] = player.position;
+
+        function convertX(x) {
+          let off = x - mapInfo.upper_left_x;
+          off = off / mapInfo.scale;
+          return off;
         }
 
-        // if health == 0, the player is dead
-        if (player.health == 0) {
-          continue;
+        function convertY(y) {
+          let off = y - mapInfo.upper_left_y;
+          off = off / mapInfo.scale;
+          off = -off;
+          return off;
         }
 
-        // draw rect, with health on the top
-        ctx.fillRect(scale(x) * canvas.width, scale(y) * canvas.height, 15, 15);
-        ctx.fillStyle = "#000000";
+        // draw rectangle
+        ctx.fillRect(convertX(x), convertY(y), 15, 15);
+        ctx.fillStyle = "#FF0000";
         let text = `HP: ${player.health}`;
-        ctx.fillText(
-          text,
-          scale(x) * canvas.width,
-          scale(y) * canvas.height - 30
-        );
-        let angle = player.ang_rotation[1];
+        ctx.font = "25px Arial";
+        ctx.fillText(text, convertX(x), convertY(y) - 30);
 
-        // we have an angle the player is looking at, so we can draw a line.
-        // the angle is in the range of [-180, 180], so we need to convert it to radians
+        let angle = player.ang_rotation[1];
         angle = ((angle + 180) * Math.PI) / 180;
         let x2 = Math.cos(angle) * 100;
         let y2 = Math.sin(angle) * 100;
         ctx.beginPath();
         ctx.lineWidth = 4;
-        ctx.moveTo(
-          scale(x) * canvas.width + 7.5,
-          scale(y) * canvas.height + 7.5
-        );
-        ctx.lineTo(
-          scale(x - x2 * 1.5) * canvas.width + 7.5,
-          scale(y - y2 * 1.5) * canvas.height + 7.5
-        );
+        ctx.strokeStyle = "#FF0000";
+        ctx.moveTo(convertX(x) + 7.5, convertY(y) + 7.5);
+        ctx.lineTo(convertX(x - x2 * 1.5) + 7.5, convertY(y - y2 * 1.5) + 7.5);
         ctx.stroke();
       }
     };

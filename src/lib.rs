@@ -21,7 +21,8 @@ pub struct MapInfo {
     pub chunks: u32,
     pub name: String,
     pub upper_left_x: f32,
-    pub bottom_right_y: f32,
+    pub upper_left_y: f32,
+    pub scale: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
