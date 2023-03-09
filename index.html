@@ -8,18 +8,69 @@
       console.log("ws connection established :P");
     };
 
+    let mapChunks;
+    let mapInfo;
+    let mapImage;
+    let canvas = document.getElementById("map");
+    let ctx = canvas.getContext("2d");
+
     ws.onmessage = async (message) => {
       let text = await message.data.text();
-      let data = JSON.parse(text);
 
-      let canvas = document.getElementById("map");
-      let ctx = canvas.getContext("2d");
+      let json = JSON.parse(text);
+      let type = json.type;
+      let data = json.data;
+
+      // 3 kinds of messages:
+      // - initMap
+      // - mapChunk
+      // - players
+      if (type == "initMap") {
+        mapInfo = data;
+        mapChunks = {};
+        return;
+      } else if (type == "mapChunk") {
+        if (!mapChunks) {
+          mapChunks = {};
+        }
+        mapChunks[data.i] = data.data;
+        return;
+      } // else...
+
+      let players = data;
 
       // reset the canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      //ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      for (let i = 0; i < data.length; i++) {
-        let player = data[i];
+      // draw the map, if we have all the chunks
+      const drawMap = () => {
+        if (mapImage) {
+          ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
+        } else if (mapInfo && mapChunks) {
+          // unite all the chunks
+          let mapBase64 = "";
+          for (let i = 0; i < mapInfo.chunks; i++) {
+            // if we don't that chunk, we can't draw the map yet
+            if (!mapChunks[i]) {
+              return;
+            }
+            mapBase64 += mapChunks[i];
+          }
+
+          // the image is jpg.
+          // we can't draw jpgs directly, so we need to convert it to a png
+          let img = new Image();
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          };
+          img.src = `data:image/png;base64,${mapBase64}`;
+          mapImage = img;
+        }
+      };
+      drawMap();
+
+      for (let i = 0; i < players.length; i++) {
+        let player = players[i];
         // console.log(player);
 
         let color;
@@ -34,11 +85,11 @@
           color = "#1E1E1E";
         }
         ctx.fillStyle = color;
-        let [x, y, z] = player.position;
-        // these positions are relative to the origin (the middle of the map)
-        // so we need to add the width/height of the canvas to get the actual position
-        // we also need to scale down, as the positions range [-3000, 3000],
-        // and our canvas is 800x800
+        let [x, y, _z] = player.position;
+        // these positions are relative to the origin (the middle of the map).
+        // the map's top left's x is at mapInfo.upper_left_x,
+        // and the map's bottom right's x is at mapInfo.bottom_right_x.
+        // we need to scale the positions to the canvas size
         function scale(x) {
           return (x + 3000) / 6000;
         }

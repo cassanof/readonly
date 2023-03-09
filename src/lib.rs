@@ -1,6 +1,30 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data", rename_all = "camelCase")]
+pub enum Message {
+    /// Players
+    Players(Vec<PlayerInfo>),
+    /// Map bytestream, chunked
+    InitMap(MapInfo),
+    MapChunk(MapChunk),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MapChunk {
+    pub i: u32,
+    pub data: String, // base64 encoded jpeg image
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MapInfo {
+    pub chunks: u32,
+    pub name: String,
+    pub upper_left_x: f32,
+    pub bottom_right_y: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerInfo {
     pub team: String,
     pub is_local: bool,
